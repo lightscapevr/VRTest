@@ -1,0 +1,12 @@
+/VRTestUnity/Assets/SteamVR
+/VRTestUnity/Assets/SteamVR.meta
+/VRTestUnity/Assets/BaroqueUI
+/VRTestUnity/Assets/BaroqueUI.meta
+/VRTestUnity/Assets/Temporary.unity*
+.*.sw?
+/VRTestUnity/.vs
+/VRTestUnity/Library
+/VRTestUnity/Temp
+/VRTestUnity/*.csproj
+/VRTestUnity/*.sln
+*~
