@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0833df4a56e68cd438b20c5162eb0253
+timeCreated: 1516983325
+licenseType: Free
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - largeSketchMeshPrefab: {fileID: 1402086573892274, guid: 5c0283f4421524045bf195de51d5131d,
+      type: 2}
+  - stemMaterial: {fileID: 2100000, guid: 022f8bbad6545d9409ec89b9131b3cdc, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

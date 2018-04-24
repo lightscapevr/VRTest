@@ -21,3 +21,16 @@ to locate which 3D objects are close to some place, given a large collection of
 such 3D objects.  The 3D objects can be any shape you want; you need to describe
 them as bounding boxes.  Similarly, the condition for intersection can be described
 by any code you want.
+
+
+## LibLargeSketch
+
+A component that draws "sketches", where a sketch is a collection of 3D polygons
+and edges (lines), generated from scripts.  Supports _very large_ sketches that don't
+change too often, while giving the tools to apply such changes when needed.  The
+polygons can use different materials.  There are a few special-purpose operations like
+temporarily changing which material shows up where, for highlighting/fading some
+parts; and hiding or changing the material for the edges.  You can also use several
+LargeSketch gameobjects with increasing details, and activate/deactivate them
+dynamically; the more detailed ones either replace the less detailed ones, or work
+additively.
