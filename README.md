@@ -10,8 +10,11 @@ manually install these two extra assets: "SteamVR" and "BaroqueUI".
 ## ColorPicker
 
 A simple VR color picker, done as a single solid object to interact with.
-Allows to pick either a random color from the continuous spectrum, or snapping
-on some colors.
+Allows picking either a random color from the continuous spectrum, or snapping
+on some colors.  For example, here we are picking the RGB color which is exactly
+(0, 0, 128):
+
+![ColorPicker1](Screenshots/ColorPicker1.jpg?raw=true "ColorPicker1")
 
 
 ## LibBVH
