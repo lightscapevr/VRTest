@@ -168,7 +168,8 @@ public class VRColorPicker : MonoBehaviour
         sphere.material.SetColor("_Color1", col);
 
         sphere.transform.localPosition = local_pt;
-        PrepareMesh(local_pt, lineto_pt);
+        if (mesh != null)
+            PrepareMesh(local_pt, lineto_pt);
     }
 
 
