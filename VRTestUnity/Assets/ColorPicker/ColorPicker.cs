@@ -6,15 +6,40 @@ using BaroqueUI;
 
 public class ColorPicker : MonoBehaviour
 {
+    /* Public API: read and write the color in the gamma color space.  The gamma space
+     * is the one in which colors you pick from the editor are usually sent; they are
+     * transformed into linear space for the GPU, like texture colors are.  (This is
+     * all assuming default settings.)  If you want linear colors, use the Linear
+     * version of these functions.
+     *
+     * Note that rendering in the gamma color space gives nicer and "more expected"
+     * color ranges.  That's why conversion is applied inside the fragment part of
+     * VertexColMask32.shader: the computed *gamma* color is a linear interpolation
+     * between pixels, which is turned into *linear* at each pixel.  This is different
+     * from doing a linear interpolation on *linear* colors directly (gives a much
+     * more white-ish result).
+     */
+    public Color GetGammaColor() { return col_gamma; }
+    public void SetGammaColor(Color col_gamma) { ApplyColor(col_gamma); }
+    public Color GetLinearColor() { return col_gamma.linear; }
+    public void SetLinearColor(Color col_linear) { ApplyColor(col_linear.gamma); }
+
+    /* Called when the user has finished changing the color */
+    public UnityEngine.Events.UnityAction<Color> onColorChanged;
+
+
+    /****************************************************************************/
+
+
     public Renderer sphere;
 
     const float CENTRAL_HOLE = 0.3f;
-
+    Color col_gamma = Color.white;
 
     private void Start()
     {
         mesh = new Mesh();
-        UpdateForPoint(new Vector3(0, 0.6f, 0));
+        ApplyColor(col_gamma);
         PrepareTrianglesOnMesh();
 
         var ht = Controller.HoverTracker(this);
@@ -30,8 +55,9 @@ public class ColorPicker : MonoBehaviour
 
     private void Ht_onTriggerUp(Controller controller)
     {
-        var local_pt = transform.InverseTransformPoint(controller.position);
-        UpdateForPoint(local_pt, up: true);
+        ApplyColor(col_gamma);
+        if (onColorChanged != null)
+            onColorChanged.Invoke(col_gamma);
     }
 
     static Vector3 Col2Vector3(Color col)
@@ -105,46 +131,25 @@ public class ColorPicker : MonoBehaviour
         else
             local_pt = lineto_pt;
 
-        /* can't use SetColor(), because we don't want the gamma correction */
-        sphere.material.SetVector("_Color1", new Vector4(col.r, col.g, col.b, 1));
+        ApplyColor(col, local_pt, lineto_pt);
+    }
+
+    void ApplyColor(Color col)
+    {
+        Vector3 pt = Col2Vector3(col);
+        ApplyColor(col, pt, pt);
+    }
+
+    void ApplyColor(Color col, Vector3 local_pt, Vector3 lineto_pt)
+    {
+        /* use SetColor(), which asks Unity to do the sRGB-to-linear correction */
+        col_gamma = col;
+        sphere.material.SetColor("_Color1", col);
 
         sphere.transform.localPosition = local_pt;
         PrepareMesh(local_pt, lineto_pt);
     }
 
-#if false
-    void PrepareTexture()
-    {
-        const int TEX_SIZE = 128;
-
-        var pixels = new Color[TEX_SIZE * TEX_SIZE];
-        for (int j = 0; j < TEX_SIZE; j++)
-            for (int i = 0; i < TEX_SIZE; i++)
-                pixels[j * TEX_SIZE + i] = Color.HSVToRGB(i / (float)TEX_SIZE, 1, j / (float)(TEX_SIZE - 1));
-
-        var tex0 = new Texture2D(TEX_SIZE, TEX_SIZE);
-        tex0.wrapModeU = TextureWrapMode.Repeat;
-        tex0.wrapModeV = TextureWrapMode.Clamp;
-        tex0.SetPixels(pixels);
-        tex0.Apply(updateMipmaps: true, makeNoLongerReadable: true);
-
-        for (int j = 0; j < TEX_SIZE; j++)
-            for (int i = 0; i < TEX_SIZE; i++)
-                pixels[j * TEX_SIZE + i] = Color.HSVToRGB(i / (float)TEX_SIZE, j / (float)(TEX_SIZE - 1), 1);
-
-        var tex2 = new Texture2D(TEX_SIZE, TEX_SIZE);
-        tex2.wrapModeU = TextureWrapMode.Repeat;
-        tex2.wrapModeV = TextureWrapMode.Clamp;
-        tex2.SetPixels(pixels);
-        tex2.Apply(updateMipmaps: true, makeNoLongerReadable: true);
-
-        var renderer = GetComponent<Renderer>();
-        var matlist = renderer.materials;   /* make a copy */
-        matlist[0].SetTexture("_MainTex", tex0);
-        matlist[2].SetTexture("_MainTex", tex2);
-        renderer.materials = matlist;
-    }
-#endif
 
     const int MESH_WIDTH = 60;
     const int MESH_HEIGHT = 15;
@@ -202,7 +207,7 @@ public class ColorPicker : MonoBehaviour
 
         mesh.SetVertices(vertices);
         mesh.SetNormals(normals);
-        mesh.SetColors(colors);
+        mesh.SetColors(colors);     /* no sRGB-to-linear conversion is applied here: sent as sRGB */
     }
 
     void PrepareTrianglesOnMesh()

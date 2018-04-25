@@ -37,13 +37,13 @@
 			{
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
-                o.color = v.vertexColor;
+                o.color = v.vertexColor;    /* sRGB */
 				return o;
 			}
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				return i.color;
+				return pow(i.color, 2.2);   /* sRGB => Linear */
 			}
 			ENDCG
 		}
