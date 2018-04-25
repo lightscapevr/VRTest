@@ -46,6 +46,7 @@ public class VRColorPicker : MonoBehaviour
         mesh = new Mesh();
         ApplyColor(col_gamma);
         PrepareTrianglesOnMesh();
+        GetComponent<MeshFilter>().sharedMesh = mesh;
     }
 
     void DoHover(IEnumerable<Vector3> world_positions)
@@ -312,7 +313,22 @@ public class VRColorPicker : MonoBehaviour
         mesh.SetIndices(stems.ToArray(), MeshTopology.Lines, 3);
 
         mesh.SetIndices(new int[] { middle_idx - 2, middle_idx - 1 }, MeshTopology.Lines, 4);
-
-        GetComponent<MeshFilter>().sharedMesh = mesh;
     }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
+    {
+        if (GetComponent<MeshFilter>().sharedMesh != null)
+            return;
+        if (mesh == null)
+        {
+            mesh = new Mesh();
+            PrepareMesh(Vector3.up, Vector3.up);
+            PrepareTrianglesOnMesh();
+        }
+        Gizmos.DrawMesh(mesh, 0, transform.position, transform.rotation, transform.lossyScale);
+        Gizmos.DrawMesh(mesh, 1, transform.position, transform.rotation, transform.lossyScale);
+        Gizmos.DrawMesh(mesh, 3, transform.position, transform.rotation, transform.lossyScale);
+    }
+#endif
 }
