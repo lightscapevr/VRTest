@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using BaroqueUI;
 
 
-public class ColorPicker : MonoBehaviour
+public class VRColorPicker : MonoBehaviour
 {
     /* Public API: read and write the color in the gamma color space.  The gamma space
      * is the one in which colors you pick from the editor are usually sent; they are
@@ -24,14 +23,20 @@ public class ColorPicker : MonoBehaviour
     public Color GetLinearColor() { return col_gamma.linear; }
     public void SetLinearColor(Color col_linear) { ApplyColor(col_linear.gamma); }
 
-    /* Called when the user has finished changing the color */
-    public UnityEngine.Events.UnityAction<Color> onColorChanged;
+    /* There is no built-in interaction.  You need to invoke these methods at the
+     * appropriate place for your own UI system.  The names start with "Mouse" but
+     * it is usually about some kind of VR controller.
+     */
+    public void MouseOver(IEnumerable<Vector3> world_positions) { DoHover(world_positions); }
+    public void MouseDrag(Vector3 world_position) { DoDrag(world_position); }
+    public void MouseRelease() { DoRelease(); }
 
 
     /****************************************************************************/
 
 
     public Renderer sphere;
+    public Material sphereSilhouette, sphereSilhouetteNearby;
 
     const float CENTRAL_HOLE = 0.3f;
     Color col_gamma = Color.white;
@@ -41,23 +46,38 @@ public class ColorPicker : MonoBehaviour
         mesh = new Mesh();
         ApplyColor(col_gamma);
         PrepareTrianglesOnMesh();
-
-        var ht = Controller.HoverTracker(this);
-        ht.onTriggerDrag += Ht_onTriggerDrag;
-        ht.onTriggerUp += Ht_onTriggerUp;
     }
 
-    private void Ht_onTriggerDrag(Controller controller)
+    void DoHover(IEnumerable<Vector3> world_positions)
     {
-        var local_pt = transform.InverseTransformPoint(controller.position);
-        UpdateForPoint(local_pt);
+        Vector3 local_target = Col2Vector3(col_gamma);
+        Material mat = sphereSilhouette;
+        foreach (var pos in world_positions)
+        {
+            Vector3 local_pos = transform.InverseTransformPoint(pos);
+            if (Vector3.Distance(local_pos, local_target) < 0.25f)
+                mat = sphereSilhouetteNearby;
+        }
+        SetSphereSilhouette(mat);
     }
 
-    private void Ht_onTriggerUp(Controller controller)
+    void SetSphereSilhouette(Material mat)
+    {
+        var mats = sphere.sharedMaterials;
+        mats[1] = mat;
+        sphere.sharedMaterials = mats;
+    }
+
+    void DoDrag(Vector3 world_position)
+    {
+        var local_pt = transform.InverseTransformPoint(world_position);
+        UpdateForPoint(local_pt);
+        SetSphereSilhouette(sphereSilhouette);
+    }
+
+    void DoRelease()
     {
         ApplyColor(col_gamma);
-        if (onColorChanged != null)
-            onColorChanged.Invoke(col_gamma);
     }
 
     static Vector3 Col2Vector3(Color col)
