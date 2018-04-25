@@ -48,4 +48,10 @@
 			ENDCG
 		}
 	}
+
+    // To receive or cast a shadow, shaders must implement the appropriate "Shadow Collector" or "Shadow Caster" pass.
+    // Although we haven't explicitly done so in this shader, if these passes are missing they will be read from a fallback
+    // shader instead, so specify one here to import the collector/caster passes used in that fallback.
+    // In this case, we just want the "Shadow Caster" pass, as we don't do anything with shadow information ourselves.
+    Fallback "VertexLit"
 }
