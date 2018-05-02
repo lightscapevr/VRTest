@@ -56,6 +56,23 @@ namespace BVH
     {
         public BVHNodeBase root;
 
+        BVHNode most_recent_node;
+        System.Random _rand = new System.Random();
+        uint _r;
+        int _bits;
+        bool _NextRandomBit()
+        {
+            if (_bits == 0)
+            {
+                _r = (uint)_rand.Next(1 << 26);
+                _bits = 26;
+            }
+            _bits--;
+            bool _result = (_r & 1) != 0;
+            _r >>= 1;
+            return _result;
+        }
+
         public void AddObject(BVHNodeBase new_object)
         {
             if (root == null)
@@ -65,10 +82,21 @@ namespace BVH
                 return;
             }
 
+            // 0. start at 'most_recent_node', and go up as long as its
+            // bounding box does not contain new_object's bounding box.
+            BVHNodeBase walk = most_recent_node;
+            if (walk == null)
+                walk = root;
+            else
+                while (walk != root)
+                {
+                    if (walk.bbox.Contains(new_object.bbox))
+                        break;
+                    walk = walk.bvh_parent;
+                }
+
             // 1. first we traverse the node looking for the best leaf
-            BVHNodeBase walk = root;
             float newObSAH = SA(new_object);
-            BVHNode parent = null;
 
             while (walk is BVHNode)
             {
@@ -81,18 +109,23 @@ namespace BVH
                 // we tend to avoid option 3 by the 0.3f factor below, because it means
                 // that an unknown number of nodes get their depth increased.
 
+                /* first a performance hack which also helps to randomly even out the
+                 * two sides in case 'new_object' is between both the bounding box of
+                 * 'left' and of 'right'
+                 */
+                var right = curNode.right;
+                bool contains_right = right.bbox.Contains(new_object.bbox);
                 var left = curNode.left;
-                if (left.bbox.Contains(new_object.bbox))   /* performance only */
+                if (left.bbox.Contains(new_object.bbox))
                 {
-                    parent = curNode;
-                    walk = left;
+                    if (contains_right && _NextRandomBit())
+                        walk = right;
+                    else
+                        walk = left;
                     continue;
                 }
-
-                var right = curNode.right;
-                if (right.bbox.Contains(new_object.bbox))   /* performance only */
+                else if (contains_right)
                 {
-                    parent = curNode;
                     walk = right;
                     continue;
                 }
@@ -109,7 +142,6 @@ namespace BVH
                 }
                 else
                 {
-                    parent = curNode;
                     if (sendLeftSAH < sendRightSAH)
                         walk = left;
                     else
@@ -118,12 +150,17 @@ namespace BVH
             }
 
             // 2. then we add the object and map it to our leaf
+            BVHNode parent = walk.bvh_parent;
+            most_recent_node = parent;
             var new_node = new BVHNode { bbox = walk.bbox, left = walk, right = new_object, bvh_parent = parent };
             walk.bvh_parent = new_node;
             new_object.bvh_parent = new_node;
 
             if (parent == null)
+            {
+                Debug.Assert(walk == root);
                 root = new_node;
+            }
             else if (parent.left == walk)
                 parent.left = new_node;
             else
@@ -134,6 +171,8 @@ namespace BVH
 
         public void RemoveObject(BVHNodeBase old_object)
         {
+            most_recent_node = null;
+
             if (old_object == root)
             {
                 root = null;
